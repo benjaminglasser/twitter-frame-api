@@ -1,13 +1,13 @@
-
-
-const express = require('express'); 
-
-const app = express();
-var secrets =  require("./secrets.js")
-const seeds = require('./seeds')
+const express = require('express')
+var bodyParser = require('body-parser')
+const linkPreviewGenerator = require("link-preview-generator")
 const cors = require('cors')
+const secrets =  require("./secrets.js")
+const seeds = require('./seeds')
 
-var Twit = require('twit');
+const app = express()
+
+var Twit = require('twit')
 
 var useSeedData = true;
 
@@ -21,7 +21,7 @@ var T = new Twit({
 let tweetBank = [];
 
 app.use(cors())
-
+app.use(bodyParser.json())
 
 
 app.get('/latest', (req, res, next) => {
@@ -37,7 +37,16 @@ app.get('/latest', (req, res, next) => {
   }
 });
 
-
+app.post('/preview', (req, res, next) => {
+  const link = req.body.link
+  console.log("FETCHING PREVIEW:", link)
+  linkPreviewGenerator(link)
+    .then(previewData => res.send(previewData))
+    .catch(e => {
+      console.error("ERROR FETCHING PREVIEW:", e)
+      res.send({data: {}})
+    });
+})
 
 function refreshTweets() {
   return new Promise((resolve, reject) => {
