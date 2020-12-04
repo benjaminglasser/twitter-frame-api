@@ -2,9 +2,12 @@ const express = require('express')
 var bodyParser = require('body-parser')
 const linkPreviewGenerator = require("link-preview-generator")
 const cors = require('cors')
+const nosc = require('node-osc')
+const ws = require('ws')
+
 const secrets =  require("./secrets.js")
 const seeds = require('./seeds')
-
+ 
 const app = express()
 
 var Twit = require('twit')
@@ -67,4 +70,35 @@ function refreshTweets() {
 
 
 const port = process.env.PORT || 8000;
-app.listen(port, () => console.log(`listening on ${port}`));
+const server = app.listen(port, () => console.log(`listening on ${port}`));
+let sockets = []
+
+// Set up a headless websocket server that prints any
+// events that come in.
+const wsServer = new ws.Server({ noServer: true });
+wsServer.on('connection', socket => {      
+  // Add our new socket to sockets array for future reference
+  sockets.push(socket)
+
+  // When a socket closes, or disconnects, remove it from the array.
+  socket.on('close', () => {
+    sockets = sockets.filter(s => s !== socket);
+  });
+});
+
+server.on('upgrade', (request, socket, head) => {
+  wsServer.handleUpgrade(request, socket, head, socket => {
+    wsServer.emit('connection', socket, request)
+  })
+})
+
+const Server = nosc.Server
+
+const oscServer = new Server(3333, '0.0.0.0', () => {
+  console.log('OSC Server is listening')
+})
+
+oscServer.on('message', (msg) => {
+  console.log(msg)
+  sockets.forEach(s => s.send(JSON.stringify({ type: msg[0], value: msg[1] })));
+})

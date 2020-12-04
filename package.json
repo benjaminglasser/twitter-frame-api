@@ -14,7 +14,8 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "link-preview-generator": "^0.0.0",
-    "twit": "^2.2.11"
+    "twit": "^2.2.11",
+    "node-osc": "^5.2.1"
   },
   "devDependencies": {
     "electron": "10.1.5"
